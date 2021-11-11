@@ -28,15 +28,17 @@ impl<H: Handler> BlockingHandler<H> {
         request: Request<Body>,
         remote_addr: SocketAddr,
     ) -> Result<HyperResponse, ServiceError> {
-        let (parts, body) = request.into_parts();
+        let (mut parts, body) = request.into_parts();
+
         let now = StartInstant::now();
+        parts.extensions.insert(now);
 
         let full_body = hyper::body::to_bytes(body).await?;
         let request = Request::from_parts(parts, full_body);
 
         let handler = self.handler.clone();
         tokio::task::spawn_blocking(move || {
-            let mut request = ConduitRequest::new(request, remote_addr, now);
+            let mut request = ConduitRequest::new(request, remote_addr);
             handler
                 .call(&mut request)
                 .map(conduit_into_hyper)
