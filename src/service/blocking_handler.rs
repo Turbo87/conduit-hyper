@@ -6,7 +6,7 @@ use crate::{ConduitResponse, HyperResponse};
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use conduit::{Handler, StartInstant, StatusCode};
+use conduit::{Handler, StatusCode};
 use hyper::{Body, Request, Response};
 use tracing::error;
 
@@ -28,10 +28,7 @@ impl<H: Handler> BlockingHandler<H> {
         request: Request<Body>,
         remote_addr: SocketAddr,
     ) -> Result<HyperResponse, ServiceError> {
-        let (mut parts, body) = request.into_parts();
-
-        let now = StartInstant::now();
-        parts.extensions.insert(now);
+        let (parts, body) = request.into_parts();
 
         let full_body = hyper::body::to_bytes(body).await?;
         let request = Request::from_parts(parts, full_body);

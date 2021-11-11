@@ -2,6 +2,7 @@ use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use conduit::StartInstant;
 use hyper::{service, Body, Request, Response};
 
 mod blocking_handler;
@@ -56,7 +57,10 @@ impl Service {
         >,
         ServiceError,
     > {
-        Ok(service::service_fn(move |request: Request<Body>| {
+        Ok(service::service_fn(move |mut request: Request<Body>| {
+            let now = StartInstant::now();
+            request.extensions_mut().insert(now);
+
             handler.clone().blocking_handler(request, remote_addr)
         }))
     }
